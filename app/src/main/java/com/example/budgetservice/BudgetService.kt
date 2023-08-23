@@ -27,7 +27,7 @@ class BudgetService {
                             )
                         )
                     } else {
-                        totalAmt += totalAmt.add(
+                        totalAmt = totalAmt.add(
                             getMonthAmt(
                                 yearMonth,
                                 dayOfMonth - start.get(Calendar.DAY_OF_MONTH) + 1,
