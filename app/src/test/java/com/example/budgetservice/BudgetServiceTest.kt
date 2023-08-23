@@ -22,21 +22,32 @@ class BudgetServiceTest {
         }
         Assert.assertEquals(
             BigDecimal.ZERO,
-            budgetService.totalAmount(startCalendar.time, endCalendar.time)
+            budgetService.totalAmount(startCalendar, endCalendar)
         )
     }
 
     @Test
-    fun `部份月`() {
+    fun `partial month`() {
         val startCalendar = GregorianCalendar().apply {
 
-            time = Date(2023,8,1)
+            time = Date(2023 - 1900, 7, 1)
         }
         val endCalendar = GregorianCalendar().apply {
-            time =  Date(2023,8,2)
+            time = Date(2023 - 1900, 7, 2)
         }
-        Assert.assertEquals(BigDecimal(2000), budgetService.totalAmount(startCalendar.time,endCalendar.time))
+        Assert.assertEquals(BigDecimal(2000), budgetService.totalAmount(startCalendar, endCalendar))
     }
 
+    @Test
+    fun `data not found`() {
+        val startCalendar = GregorianCalendar().apply {
+
+            time = Date(2023 - 1900, 6, 1)
+        }
+        val endCalendar = GregorianCalendar().apply {
+            time = Date(2023 - 1900, 6, 2)
+        }
+        Assert.assertEquals(BigDecimal(0), budgetService.totalAmount(startCalendar, endCalendar))
+    }
 
 }
