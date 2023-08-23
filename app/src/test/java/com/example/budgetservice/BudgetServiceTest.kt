@@ -50,4 +50,33 @@ class BudgetServiceTest {
         Assert.assertEquals(BigDecimal(0), budgetService.totalAmount(startCalendar, endCalendar))
     }
 
+    @Test
+    fun `multiple month`() {
+        val startCalendar = GregorianCalendar().apply {
+
+            time = Date(2023 - 1900, 6, 1)
+        }
+        val endCalendar = GregorianCalendar().apply {
+            time = Date(2023 - 1900, 8, 20)
+        }
+        Assert.assertEquals(
+            BigDecimal(51000),
+            budgetService.totalAmount(startCalendar, endCalendar)
+        )
+    }
+
+    @Test
+    fun `single date`() {
+        val startCalendar = GregorianCalendar().apply {
+            time = Date(2023 - 1900, 7, 1)
+        }
+        val endCalendar = GregorianCalendar().apply {
+            time = Date(2023 - 1900, 7, 1)
+        }
+        Assert.assertEquals(
+            BigDecimal(1000),
+            budgetService.totalAmount(startCalendar, endCalendar)
+        )
+    }
+
 }
