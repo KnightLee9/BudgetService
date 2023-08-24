@@ -43,4 +43,7 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+    testImplementation( "io.mockk:mockk:1.12.0")
+    testImplementation("org.powermock:powermock-module-junit4:1.6.5")
+    testImplementation("org.powermock:powermock-api-mockito:1.6.5")
 }
