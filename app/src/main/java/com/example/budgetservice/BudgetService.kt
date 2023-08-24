@@ -1,81 +1,74 @@
 package com.example.budgetservice
 
 import java.math.BigDecimal
-import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.GregorianCalendar
 
 class BudgetService {
-    fun totalAmount(start: GregorianCalendar, end: GregorianCalendar): BigDecimal {
+    fun totalAmount(start: Calendar, end: Calendar): BigDecimal {
         if (!isCheckDateRange(start, end)) {
             return BigDecimal(0)
         }
-        var current = start
-        var totalAmt = BigDecimal.ZERO
-        current.set(Calendar.DATE, 1)
-        while (current.before(end) || isSameDate(current, end)) {
-            val dayOfMonth = current.getActualMaximum(Calendar.DAY_OF_MONTH)
-            val yearMonth = SimpleDateFormat("yyyyMM").format(current.time)
-            when {
-                current.get(Calendar.MONTH) == start.get(Calendar.MONTH) -> {
-                    if (start.get(Calendar.MONTH) == end.get(Calendar.MONTH)) {
-                        totalAmt = totalAmt.add(
-                            getMonthAmt(
-                                yearMonth,
-                                end.get(Calendar.DAY_OF_MONTH) - start.get(Calendar.DAY_OF_MONTH) + 1,
-                                dayOfMonth
-                            )
-                        )
-                    } else {
-                        totalAmt = totalAmt.add(
-                            getMonthAmt(
-                                yearMonth,
-                                dayOfMonth - start.get(Calendar.DAY_OF_MONTH) + 1,
-                                dayOfMonth
-                            )
-                        )
-                    }
-                }
-
-                current.get(Calendar.MONTH) == end.get(Calendar.MONTH) -> {
-                    totalAmt = totalAmt.add(
-                        getMonthAmt(
-                            yearMonth,
-                            start.get(Calendar.DAY_OF_MONTH),
-                            dayOfMonth
-                        )
-                    )
-                }
-
-                else -> {
-                    totalAmt = totalAmt.add(
-                        getMonthAmt(
-                            SimpleDateFormat("yyyyMM").format(current),
-                            dayOfMonth,
-                            dayOfMonth
-                        )
-                    )
-                }
+        return BudgetRepoImpl.getAll().map {
+            val budgetYearMonth = Calendar.getInstance().apply {
+                set(Calendar.YEAR, it.yearMonth.substring(0, 4).toInt())
+                set(Calendar.MONTH, it.yearMonth.substring(4, 6).toInt() - 1)
             }
-            current.add(Calendar.MONTH, 1)
+            when {
+                inBudgetRange(start, end, budgetYearMonth) -> {
+                    it.amount.multiply(
+                        BigDecimal(
+                            getEndDay(end, budgetYearMonth)
+                                    - getStartDay(start, budgetYearMonth)
+                                    + 1
+                        )
+                    ).divide(BigDecimal(budgetYearMonth.getActualMaximum(Calendar.DAY_OF_MONTH)))
+                }
+
+                else -> BigDecimal.ZERO
+            }
+        }.sumOf { it }
+    }
+
+    private fun getStartDay(start: Calendar, budgetYearMonth: Calendar): Int {
+        return if (start.get(Calendar.YEAR) == budgetYearMonth.get(Calendar.YEAR)
+            && start.get(Calendar.MONTH) == budgetYearMonth.get(Calendar.MONTH)
+        ) {
+            start.get(Calendar.DAY_OF_MONTH)
+        } else {
+            1
         }
-        return totalAmt
     }
 
-    private fun getMonthAmt(ym: String, totalDate: Int, dayOfMonth: Int): BigDecimal {
-        val amt = BudgetRepoImpl.getAll().find { it.yearMonth == ym }?.amount ?: BigDecimal.ZERO
-        return amt.multiply(BigDecimal(totalDate)).divide(BigDecimal(dayOfMonth))
+    private fun getEndDay(end: Calendar, budget: Calendar): Int {
+        return if (end.get(Calendar.YEAR) == budget.get(Calendar.YEAR)
+            && end.get(Calendar.MONTH) == budget.get(Calendar.MONTH)
+        ) {
+            end.get(Calendar.DAY_OF_MONTH)
+        } else {
+            budget.getActualMaximum(Calendar.DAY_OF_MONTH)
+        }
     }
 
 
-    private fun isCheckDateRange(start: GregorianCalendar, end: GregorianCalendar): Boolean {
+    private fun inBudgetRange(
+        start: Calendar,
+        end: Calendar,
+        budget: Calendar,
+    ): Boolean {
+        return budget.after((start.clone() as Calendar).apply {
+            add(Calendar.MONTH, -1)
+        }) && budget.before((end.clone() as Calendar).apply {
+            add(Calendar.MONTH, 1)
+        })
+    }
+
+    private fun isCheckDateRange(start: Calendar, end: Calendar): Boolean {
         return end.after(start) || isSameDate(start, end)
     }
 
-    private fun isSameDate(start: GregorianCalendar, end: GregorianCalendar): Boolean {
-        return start.get(Calendar.YEAR) == end.get(Calendar.YEAR) && start.get(Calendar.MONTH) == end.get(
-            Calendar.MONTH
-        )
-                && start.get(Calendar.DATE) == end.get(Calendar.DATE)
+    private fun isSameDate(start: Calendar, end: Calendar): Boolean {
+        return start.get(Calendar.YEAR) == end.get(Calendar.YEAR) &&
+                start.get(Calendar.MONTH) == end.get(Calendar.MONTH) &&
+                start.get(Calendar.DATE) == end.get(Calendar.DATE)
     }
 }
